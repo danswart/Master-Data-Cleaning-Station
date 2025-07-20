@@ -1,0 +1,357 @@
+---
+title: "ggplot2 Formatting Prefs"
+subtitle: ""
+description: ""
+author: "Dan Swart, CPA (ret)"
+date: "2025-04-29"
+# bibliography: manual-refs.bib
+format:
+  html:
+    code-copy: true
+    include-after-body: 
+      - text: |
+         <script type="text/javascript" src="reference-backlinks.js"></script>
+    css: 
+      - swart.css
+    page-layout: full
+    fig-width: 12
+    fig-height: 10
+    fig-dpi: 300
+    df-print: paged
+    code-overflow: wrap
+    toc: true
+    citeproc: true
+    link-citations: true
+  typst:
+    fig-width: 12
+    fig-height: 10
+    fig-dpi: 300
+    margin:
+      x: 1in
+      y: 1in
+    toc: true
+    fontsize: 14pt
+    mainfont: "Latin Modern Roman"
+execute:
+  echo: false
+  message: false
+  warning: false
+  eval: true
+  fig-width: 12
+  fig-height: 10
+
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+
+knitr::opts_chunk$set(echo = TRUE)
+
+# Prevent scientific notation globally
+options(scipen = 999)
+
+# load libraries
+library(tidyverse)
+library(DT)
+library(plotly)
+library(ggplot2)
+library(kableExtra)
+library(tibble)
+library(patchwork)
+library(ppcor)
+library(ggdag)
+library(ggplot2)
+library(corrplot)
+library(ggcorrplot)
+library(car)
+library(WRS2)
+library(boot)
+library(BayesFactor)
+library(pwr)
+library(qgraph)
+library(scales)
+
+
+# Set global theme for consistent plots
+theme_set(theme_minimal(base_size = 20) + 
+          theme(
+    plot.title = element_text(face = "bold", size = 26),    # adjust title size
+    plot.subtitle = element_text(face = "bold", size = 24), # adjust subtitle size
+    axis.title.x = element_text(face = "bold", size = 22),
+    axis.title.y = element_text(face = "bold", size = 22),
+    axis.text.x = element_text(face = "bold", size = 22, angle = 45, hjust = 1),
+    legend.position = "bottom",
+    strip.text = element_text(face = "bold"),
+    panel.spacing.x = unit(1.5, "cm"),  # Horizontal spacing only
+    panel.spacing.y = unit(1.5, "cm"),   # Vertical spacing only
+    plot.margin = margin(20, 20, 20, 20, "pt")
+    )
+)
+
+
+# Set seed for reproducibility
+set.seed(123)
+
+```
+
+
+
+These are my ggplot2 formatting preferences"
+
+# GENERAL FORMATTING FOR ALL PLOTS
+
+## lines connecting the points
+  ggplot2::geom_line(color = "darkgray", 
+  linewidth = 1.2) +
+
+
+## points 
+  ggplot2::geom_point(aes(x = 
+                          y = 
+                          color = blue
+                          ),
+                      size = 2.5) +
+
+## base size
+  ggplot2::theme_minimal(base_size = 26) +
+
+
+## legends AND angled text for x axis
+ # remove legend and set x-axis to 45 degrees and push title downward
+ ggplot2::theme(
+   legend.position = "none",
+   axis.text.x = element_text(angle = 45,
+                              hjust = 1.00),
+   axis.title.x = element_text(margin = margin(t = 20))  # This moves the x-axis TITLE down
+ ) +
+
+
+  
+# Scaling x axis
+  # Push x-axis downward and add space between y-axis and chart.  Makes room for labels
+  ggplot2::scale_x_continuous(breaks = unique(???),
+                              expand = expansion(add = 30)   # Add 2 units of space on the left and right of the data
+  ) +
+
+
+## Y-axis formatting
+  # Add padding on both sides of y-axis
+  ggplot2::scale_y_continuous(
+    labels = function(y)
+      format(y,
+             scientific = FALSE,
+             big.mark = ","
+      ),
+    expand = expansion(mult = c(0.10, 0.10))  # 10% space below lowest value and 10% above highest
+  )
+
+
+
+
+
+# Theme and title plot objects 
+
+  ggplot2::theme(plot.title.position = "panel",
+                 text = ggplot2::element_text(color = "royalblue"
+                 ),
+                 plot.title = ggtext::element_markdown(
+                   color = "darkgreen",
+                   size = 26,
+                   face = "bold",
+                   lineheight = 1.1,
+                   margin = ggplot2::margin(2, 0, 0, 0, "lines"
+                   )
+                 ),
+
+                 plot.subtitle = ggtext::element_markdown(
+                   color = "darkgreen",
+                   size = 24,
+                   face = "bold",
+                   lineheight = 1.0,
+                   margin = ggplot2::margin(0, 0, 0, 0, "lines"
+                   )
+                 ),
+
+                 # Customize i_chart caption's font size and position
+                 plot.caption = ggplot2::element_text(
+                   size = 22,                     # Set the font size of the caption
+                   hjust = 0,                     # Center align the caption horizontally
+                   vjust = 2,                     # Set vertical position of the caption
+                   face = "italic",               # Set font style (e.g., italic)
+                   color = "darkblue"             # Set color of the caption text
+                 ),
+
+                 strip.text = ggplot2::element_text(color = "orange",
+                                                    size = 29,
+                                                    face = "italic",
+                                                    margin = ggplot2::margin(2, 0, 0.5, 0, "lines"
+                                                    )
+                 ),
+
+                 axis.text = ggplot2::element_text(color = "black"),
+
+                 panel.background = ggplot2::element_rect(fill = "white", color = NA),
+
+                 plot.background = ggplot2::element_rect(fill = "white", color = NA)
+  )
+
+
+
+# Add padding to individual plots
+
+  ggplot2::theme(plot.margin = ggplot2::margin(t = 0,
+                                               r = 0,
+                                               b = 0,
+                                               l = 0
+  )
+  ) # Adjust padding (top, right, bottom, left)
+
+
+
+
+
+
+
+# ONLY FOR CONTROL CHARTS
+
+## ONLY for control charts
+  ggplot2::scale_color_manual(values = c("TRUE" = "red", "FALSE" = "blue")) +    # Define colors for dots based on value of sigma_signals
+
+
+  # CL type depends on runs_signals
+  geom_line(aes(y = emp_cl,
+                linetype = factor(runs_signal)
+                )
+            ) +
+
+  scale_linetype_manual(values = c("FALSE" = "solid", "TRUE" = "dashed")) +
+
+
+## ONLY for control limits on control charts
+  ggplot2::geom_line(aes(y = emp_ucl),
+                     color = "red",
+                     linetype = "solid",
+                     linewidth = 1
+  ) +
+
+  ggplot2::geom_line(aes(y = emp_lcl),
+                     color = "red",
+                     linetype = "solid",
+                     linewidth = 1
+  ) +
+
+
+
+## ONLY for control charts
+  # Disclose CL calculation
+  ggtext::geom_richtext(
+    data = annotation_data_limits,  # Use the annotation data frame
+    aes(x = x_pos, y = y_pos, label = label),  # Map to columns in annotation_data
+    size = 8,
+    color = "black",
+    hjust = 0,
+    vjust = 0,
+    fill = "lightblue",
+    label.color = "black"
+  ) +
+
+
+## ONLY for control charts
+  # Disclose CL linetype
+  ggtext::geom_richtext(
+    data = annotation_data_cl_type ,  # Use the annotation data frame
+    aes(x = x_pos, y = y_pos, label = label),  # Map to columns in annotation_data
+    size = 8,
+    color = "black",
+    hjust = 0,
+    vjust = 0,
+    fill = "lightyellow",
+    label.color = "black"
+  ) +
+  
+
+## ONLY for control charts
+
+
+# # Add labels for the first, middle, and last values of UCL, LCL, and centerline
+  ggplot2::geom_text(aes(x = dplyr::first(week_ended),     # dplyr function to set the x position of text
+                         y = dplyr::first(emp_cl),         # dplyr function to set the y position of the text
+                         label = "Avg Expectation",
+  ),
+  color = "blue",
+  vjust = -1,
+  hjust = 1.1,
+  size = 8
+  ) +
+
+
+## ONLY for control charts
+  ggplot2::geom_text(aes(x = dplyr::last(week_ended),                  # dplyr function to set the x position of text
+                         y = dplyr::last(emp_cl),                      # dplyr function to set the y position of the text
+                         label = format(round(dplyr::last(emp_cl), 2   # dplyr function to round last pct in 'centerline' column
+                         ),
+                         )
+  ),
+  color = "blue",
+  vjust = 0,
+  hjust = -0.1,
+  size = 8
+  ) +
+
+
+## ONLY for control charts
+  ggplot2::geom_text(aes(x = dplyr::first(week_ended) + 0.5,   # dplyr function to set the x position of text
+                         y = dplyr::first(emp_ucl),            # dplyr function to set the y position of the text
+                         label = "Upper Expectation",
+  ),
+  color = "red",
+  vjust = -1,
+  hjust = 1.1,
+  size = 8
+  ) +
+
+
+## ONLY for control charts
+  ggplot2::geom_text(aes(x = dplyr::last(week_ended),                   # dplyr function to set the x position of text
+                         y = dplyr::last(emp_ucl),                      # dplyr function to set the y position of text
+                         label = format(round(dplyr::last(emp_ucl), 2   # dplyr function to round last pct in 'ucl' column
+                         ),
+                         )
+                         ),
+                     color = "red",
+                     vjust = -1,
+                     hjust = -0.1,
+                     size = 8
+  ) +
+
+
+# ONLY for control charts
+  ggplot2::geom_text(aes(x = dplyr::first(week_ended) + .5,      # dplyr function to set the x position of text
+                         y = dplyr::first(emp_lcl),              # dplyr function to set the y position of text
+                         label = "Lower Expectation"
+                         ),
+  color = "red",
+  vjust = 1.75,
+  hjust = 1.1,
+  size = 8
+  ) +
+
+
+## ONLY for control charts
+  ggplot2::geom_text(aes(x = dplyr::last(week_ended),                    # dplyr function to set the x position of text
+                         y = dplyr::last(emp_lcl),                       # dplyr function to set the y position of text
+                         label = format(round(dplyr::last(emp_lcl), 2    # dplyr function to round last pct in 'ucl' column
+                         ),
+                         )
+                         ),
+                     color = "red",
+                     vjust = 1.5,
+                     hjust = -0.1,
+                     size = 8
+                     )
+
+
+
+ 

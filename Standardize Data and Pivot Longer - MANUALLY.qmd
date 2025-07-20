@@ -1,0 +1,288 @@
+---
+title: "Manually Standardize Data and Pivot Longer"
+subtitle: "Add these files to each project folder"
+description: ""
+author: "Dan Swart, CPA (ret)"
+date: "2025-04-29"
+# bibliography: manual-refs.bib
+format:
+  html:
+    code-copy: true
+    include-after-body: 
+      - text: |
+         <script type="text/javascript" src="reference-backlinks.js"></script>
+    css: 
+      - swart.css
+    page-layout: full
+    fig-width: 12
+    fig-height: 10
+    fig-dpi: 300
+    df-print: paged
+    code-overflow: wrap
+    toc: true
+    citeproc: true
+    link-citations: true
+  typst:
+    fig-width: 12
+    fig-height: 10
+    fig-dpi: 300
+    margin:
+      x: 1in
+      y: 1in
+    toc: true
+    fontsize: 14pt
+    mainfont: "Latin Modern Roman"
+execute:
+  echo: false
+  message: false
+  warning: false
+  eval: true
+  fig-width: 12
+  fig-height: 10
+
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+
+knitr::opts_chunk$set(echo = TRUE)
+
+# Prevent scientific notation globally
+options(scipen = 999)
+
+# load libraries
+library(tidyverse)
+library(DT)
+library(plotly)
+library(ggplot2)
+library(kableExtra)
+library(tibble)
+library(patchwork)
+library(ppcor)
+library(ggdag)
+library(ggplot2)
+library(corrplot)
+library(ggcorrplot)
+library(car)
+library(WRS2)
+library(boot)
+library(BayesFactor)
+library(pwr)
+library(qgraph)
+library(scales)
+
+
+# Set global theme for consistent plots
+theme_set(theme_minimal(base_size = 20) + 
+          theme(
+    plot.title = element_text(face = "bold", size = 26),    # adjust title size
+    plot.subtitle = element_text(face = "bold", size = 24), # adjust subtitle size
+    axis.title.x = element_text(face = "bold", size = 22),
+    axis.title.y = element_text(face = "bold", size = 22),
+    axis.text.x = element_text(face = "bold", size = 22, angle = 45, hjust = 1),
+    legend.position = "bottom",
+    strip.text = element_text(face = "bold"),
+    panel.spacing.x = unit(1.5, "cm"),  # Horizontal spacing only
+    panel.spacing.y = unit(1.5, "cm"),   # Vertical spacing only
+    plot.margin = margin(20, 20, 20, 20, "pt")
+    )
+)
+
+
+# Set seed for reproducibility
+set.seed(123)
+
+```
+
+
+
+***COMMENT OUT ALL 'SAVE' FUNCTIONS BELOW BEFORE PROCESSING ANYTHING***
+
+
+## ✅   The Data Pipeline 
+
+
+Raw Data → Cleaning Script → Standardized Format: e.g., date, value, campus, metric, etc ...
+
+
+The date, value, categories structure make all chart code more intuitive.
+For example: 
+
+Run Charts: aes(x = date, y = value)  
+Line Charts: aes(x = date, y = value, color = campus)  
+Control Charts: Same structure + control limits  
+Cohort Analysis: group_by() any categorical column  
+
+
+
+### 1. Load libraries
+
+```{r}
+#| message: false
+#| warning: false
+#| paged-print: false
+
+library(dplyr)
+library(readr)
+library(janitor)
+library(tibble)
+library(tidyverse)
+library(lubridate)
+
+```
+
+### 2. Load function for later use in this manual pipeline
+
+```{r}
+#| message: false
+#| warning: false
+#| paged-print: false
+
+# My exploration function - helpful for complex datasets
+explore_my_data <- function(data) {
+  cat("=== MY DATA CHECK ===\n")
+  cat("Dimensions:", nrow(data), "rows x", ncol(data), "columns\n")
+  cat("File size:", format(object.size(data), units = "MB"), "\n")
+  cat("Columns:", paste(names(data), collapse = ", "), "\n\n")
+  
+  head(data)
+  glimpse(data)
+
+  
+  # Extra useful for complex data:
+  cat("\nMissing values per column:\n")
+  missing_summary <- sapply(data, function(x) sum(is.na(x)))
+  print(missing_summary[missing_summary > 0])  # Only show columns with missing data
+  
+  cat("\nData types summary:\n")
+  print(table(sapply(data, class)))
+  
+}
+
+
+# Use it:
+# explore_my_data(man_standardized_data)
+```
+
+
+
+
+
+### 3. Load data (likely in WIDE format)
+
+```{r}
+
+man_standardized_data <- read_csv("data archive/20250318 staar_performance_district_level_grades_3_to_8_2018_2024_merged_cleaned_long.csv", show_col_types = FALSE)
+
+```
+
+### 4. Quick exploration using the function defined above
+
+```{r}
+
+explore_my_data(man_standardized_data)   # function created in this manual pipeline
+
+```
+
+
+### 5. Tidy column names (if needed)
+
+```{r}
+# clean names
+# man_standardized_data <- man_standardized_data %>%
+#   janitor::clean_names()
+
+```
+
+
+### 6. Convert char column to date column (if needed).  
+
+Rearrange columns and eliminate any transitional columns no longer needed.
+
+```{r}
+# man_standardized_data <- man_standardized_data %>%
+#   mutate(
+#     start_date_str = str_extract(date, "^[A-Za-z]+ ?\\d+"),
+#     start_date_str = str_replace(start_date_str, "([A-Za-z]+)(\\d+)", "\\1 \\2"),
+#     year = if_else(
+#       str_detect(start_date_str, "^(Jan|Feb|Mar|Apr|May)"), 
+#       2025, 
+#       2024
+#     ),
+#     date_parsed = mdy(paste(start_date_str, year))
+#   ) %>%
+#   arrange(date_parsed) %>%
+#   # Remove unwanted columns and rename date_parsed to date
+#   select(-date, -start_date_str, -year) %>%
+#   rename(date = date_parsed) %>%
+#   relocate(date, .before = everything())
+
+```
+
+
+### 7. Rename and reorder columns so 'data' and 'value' are the first two columns (if needed)
+
+```{r}
+
+# Rename and reorder columns
+man_standardized_data <- man_standardized_data %>%
+  rename(date = year) %>%
+  select(date, value, everything())
+
+# Confirm results
+dplyr::glimpse(man_standardized_data)
+
+```
+
+
+### 8. If already in long format, rename
+
+```{r}
+man_standardized_data_long <- man_standardized_data
+
+```
+
+
+### 9. Pivot Longer (if needed)
+
+```{r}
+
+# man_standardized_data_long <- man_standardized_data %>%
+#  pivot_longer(
+#     cols = -date,
+#     names_to = "campus", 
+#     values_to = "value"
+#     ) %>%
+#   select(date, value, campus
+#   )
+
+```
+
+
+
+### 10. Verify the results
+
+```{r}
+
+glimpse(man_standardized_data_long)
+head(man_standardized_data_long)
+
+```
+
+
+### 11.  Use this automated save function
+
+
+```{r}
+
+# # Make automated functions available for automated data cleaning
+# source("automated_data_cleaning_functions.r")
+# 
+# 
+# # Use the automated function
+# save_cleaned_data(man_standardized_data_long, "data/man_standardized_20250318_staar_performance_district_level_grades_3_to_8_2018_2024_merged_cleaned_LONG.csv"
+#                    )
+
+```

@@ -1,0 +1,201 @@
+---
+title: "Auto Standardize Long Data"
+subtitle: ""
+description: ""
+author: "Dan Swart, CPA (ret)"
+date: "2025-04-29"
+# bibliography: manual-refs.bib
+format:
+  html:
+    code-copy: true
+    include-after-body: 
+      - text: |
+         <script type="text/javascript" src="reference-backlinks.js"></script>
+    css: 
+      - swart.css
+    page-layout: full
+    fig-width: 12
+    fig-height: 10
+    fig-dpi: 300
+    df-print: paged
+    code-overflow: wrap
+    toc: true
+    citeproc: true
+    link-citations: true
+  typst:
+    fig-width: 12
+    fig-height: 10
+    fig-dpi: 300
+    margin:
+      x: 1in
+      y: 1in
+    toc: true
+    fontsize: 14pt
+    mainfont: "Latin Modern Roman"
+execute:
+  echo: false
+  message: false
+  warning: false
+  eval: true
+  fig-width: 12
+  fig-height: 10
+
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+
+knitr::opts_chunk$set(echo = TRUE)
+
+# Prevent scientific notation globally
+options(scipen = 999)
+
+# load libraries
+library(tidyverse)
+library(DT)
+library(plotly)
+library(ggplot2)
+library(kableExtra)
+library(tibble)
+library(patchwork)
+library(ppcor)
+library(ggdag)
+library(ggplot2)
+library(corrplot)
+library(ggcorrplot)
+library(car)
+library(WRS2)
+library(boot)
+library(BayesFactor)
+library(pwr)
+library(qgraph)
+library(scales)
+
+
+# Set global theme for consistent plots
+theme_set(theme_minimal(base_size = 20) + 
+          theme(
+    plot.title = element_text(face = "bold", size = 26),    # adjust title size
+    plot.subtitle = element_text(face = "bold", size = 24), # adjust subtitle size
+    axis.title.x = element_text(face = "bold", size = 22),
+    axis.title.y = element_text(face = "bold", size = 22),
+    axis.text.x = element_text(face = "bold", size = 22, angle = 45, hjust = 1),
+    legend.position = "bottom",
+    strip.text = element_text(face = "bold"),
+    panel.spacing.x = unit(1.5, "cm"),  # Horizontal spacing only
+    panel.spacing.y = unit(1.5, "cm"),   # Vertical spacing only
+    plot.margin = margin(20, 20, 20, 20, "pt")
+    )
+)
+
+
+# Set seed for reproducibility
+set.seed(123)
+
+```
+
+
+
+
+
+## ✅   The Data Pipeline 
+
+
+Raw Data → Cleaning Script → Standardized Format: e.g., date, value, campus, metric, ...
+
+Dashboard Upload → Smart Filtering → Ready for Charts
+
+The date, value, categories structure make all chart code more intuitive:
+
+Run Charts: aes(x = date, y = value)
+Line Charts: aes(x = date, y = value, color = campus)
+Control Charts: Same structure + control limits
+Cohort Analysis: group_by() any categorical column
+
+
+
+## Source automated functions
+
+```{r}
+
+# making automated functions available for automated data cleaning
+source("automated_data_cleaning_functions.r")
+
+```
+
+##  Automated Data Exploration Strategy:
+
+Load & full-luxury exploration all in one step (this is same as explore_data function)
+
+```{r}
+
+auto_raw_data1 <- load_and_explore("data/20250227 SCUC Snapshots 1995 to 2023-LONG.csv")
+
+```
+
+This gives you everything:
+
+- Dimensions
+- Column names with numbers (for easy reference)
+- Data types (glimpse() output)
+- First 6 rows of actual data
+- Auto-detected date/numeric/categorical columns
+
+
+
+
+# Full-luxury explore (if data already loaded)
+
+```{r}
+
+auto_raw_data2 <- explore_data(auto_raw_data1)
+
+```
+
+
+
+
+Quick exploration function (tibble of 1st 6 rows only)
+
+```{r}
+
+auto_raw_data3 <- quick_look(auto_raw_data1)
+
+```
+
+
+Standardize the data frame automatically (requires path to original data)
+This does all that the manual pipeline does in one function
+
+```{r}
+std_data1 <- clean_eda_data("data/20250227 SCUC Snapshots 1995 to 2023-LONG.csv")
+
+```
+
+
+ALL rates and percentages must be expressed in decimal form.
+
+If needed, convert column of your choice to decimal form
+
+```{r}
+# Usage examples:
+
+std_data1 <- convert_column_to_decimal(std_data1, "value")
+# std_data1 <- convert_column_to_decimal(std_data1, "completion_rate")
+# std_data1 <- convert_column_to_decimal(std_data1, "satisfaction_score")
+
+```
+
+
+
+Save the results
+
+```{r}
+
+# save_cleaned_data(std_data1, "data/auto_standardized_20250227_SCUC_Snapshots_1995_to_2023-LONG.csv")
+
+```
+
+

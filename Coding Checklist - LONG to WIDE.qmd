@@ -1,0 +1,155 @@
+---
+title: "LONG to WIDE Logic"
+subtitle: "Coding Checklist"
+description: ""
+author: "Dan Swart, CPA (ret)"
+date: "2025-04-29"
+# bibliography: manual-refs.bib
+format:
+  html:
+    code-copy: true
+    include-after-body: 
+      - text: |
+         <script type="text/javascript" src="reference-backlinks.js"></script>
+    css: 
+      - swart.css
+    page-layout: full
+    fig-width: 12
+    fig-height: 10
+    fig-dpi: 300
+    df-print: paged
+    code-overflow: wrap
+    toc: true
+    citeproc: true
+    link-citations: true
+  typst:
+    fig-width: 12
+    fig-height: 10
+    fig-dpi: 300
+    margin:
+      x: 1in
+      y: 1in
+    toc: true
+    fontsize: 14pt
+    mainfont: "Latin Modern Roman"
+execute:
+  echo: false
+  message: false
+  warning: false
+  eval: true
+  fig-width: 12
+  fig-height: 10
+
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+
+knitr::opts_chunk$set(echo = TRUE)
+
+# Prevent scientific notation globally
+options(scipen = 999)
+
+# load libraries
+library(tidyverse)
+library(DT)
+library(plotly)
+library(ggplot2)
+library(kableExtra)
+library(tibble)
+library(patchwork)
+library(ppcor)
+library(ggdag)
+library(ggplot2)
+library(corrplot)
+library(ggcorrplot)
+library(car)
+library(WRS2)
+library(boot)
+library(BayesFactor)
+library(pwr)
+library(qgraph)
+library(scales)
+
+
+# Set global theme for consistent plots
+theme_set(theme_minimal(base_size = 20) + 
+          theme(
+    plot.title = element_text(face = "bold", size = 26),    # adjust title size
+    plot.subtitle = element_text(face = "bold", size = 24), # adjust subtitle size
+    axis.title.x = element_text(face = "bold", size = 22),
+    axis.title.y = element_text(face = "bold", size = 22),
+    axis.text.x = element_text(face = "bold", size = 22, angle = 45, hjust = 1),
+    legend.position = "bottom",
+    strip.text = element_text(face = "bold"),
+    panel.spacing.x = unit(1.5, "cm"),  # Horizontal spacing only
+    panel.spacing.y = unit(1.5, "cm"),   # Vertical spacing only
+    plot.margin = margin(20, 20, 20, 20, "pt")
+    )
+)
+
+
+# Set seed for reproducibility
+set.seed(123)
+
+```
+
+
+## Mental Model:
+
+"I want to spread [values_from] across columns named by [names_from], with each row representing one [row identifier]"
+
+----
+
+
+## Pre-Pivot Planning Checklist:
+
+### 1. Define Your Target Structure:
+
+ * What should each row represent? (For example: one date per row)
+ 
+ * What should each column represent? (For example: each grouping category)
+ 
+ * What should fill the cells? (For example: the value for that date-grouping combination)
+ 
+
+### 2. Identify Your Key Variables:
+
+* Row identifier: What stays as rows? (For example: date)
+
+* Column source: What becomes new column names? (For example: grouping)
+
+* Value source: What fills the cells? (For example: value)
+
+----
+
+## Coding Checklist:
+
+### 3. Clean Your Data First:
+
+* select() only the columns you need (date, grouping, value)
+
+* Remove any unnecessary variables that might cause complications
+
+
+### 4. Set Up pivot_wider():
+
+* names_from =  the variable that becomes column names
+
+* values_from =  the variable that fills cells
+
+* Handle duplicates with values_fn =  if needed (first, mean, sum, etc.)
+
+
+### 5. Test Your Logic:
+
+* Check: Does each unique row identifier get exactly one row?
+
+* Check: Does each unique names_from value become a column?
+
+* Check: Are there any unexpected NAs or duplicates?
+
+
+

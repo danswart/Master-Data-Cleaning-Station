@@ -1,0 +1,246 @@
+---
+title: "long to wide"
+subtitle: "Add these files to each project folder"
+description: ""
+author: "Dan Swart, CPA (ret)"
+date: "2025-04-29"
+# bibliography: manual-refs.bib
+format:
+  html:
+    code-copy: true
+    include-after-body: 
+      - text: |
+         <script type="text/javascript" src="reference-backlinks.js"></script>
+    css: 
+      - swart.css
+    page-layout: full
+    fig-width: 12
+    fig-height: 10
+    fig-dpi: 300
+    df-print: paged
+    code-overflow: wrap
+    toc: true
+    citeproc: true
+    link-citations: true
+  typst:
+    fig-width: 12
+    fig-height: 10
+    fig-dpi: 300
+    margin:
+      x: 1in
+      y: 1in
+    toc: true
+    fontsize: 14pt
+    mainfont: "Latin Modern Roman"
+execute:
+  echo: false
+  message: false
+  warning: false
+  eval: true
+  fig-width: 12
+  fig-height: 10
+
+---
+
+```{r}
+#| label: setup
+#| include: false
+
+
+knitr::opts_chunk$set(echo = TRUE)
+
+# Prevent scientific notation globally
+options(scipen = 999)
+
+# load libraries
+library(tidyverse)
+library(DT)
+library(plotly)
+library(ggplot2)
+library(kableExtra)
+library(tibble)
+library(patchwork)
+library(ppcor)
+library(ggdag)
+library(ggplot2)
+library(corrplot)
+library(ggcorrplot)
+library(car)
+library(WRS2)
+library(boot)
+library(BayesFactor)
+library(pwr)
+library(qgraph)
+library(scales)
+
+
+# Set global theme for consistent plots
+theme_set(theme_minimal(base_size = 20) + 
+          theme(
+    plot.title = element_text(face = "bold", size = 26),    # adjust title size
+    plot.subtitle = element_text(face = "bold", size = 24), # adjust subtitle size
+    axis.title.x = element_text(face = "bold", size = 22),
+    axis.title.y = element_text(face = "bold", size = 22),
+    axis.text.x = element_text(face = "bold", size = 22, angle = 45, hjust = 1),
+    legend.position = "bottom",
+    strip.text = element_text(face = "bold"),
+    panel.spacing.x = unit(1.5, "cm"),  # Horizontal spacing only
+    panel.spacing.y = unit(1.5, "cm"),   # Vertical spacing only
+    plot.margin = margin(20, 20, 20, 20, "pt")
+    )
+)
+
+
+# Set seed for reproducibility
+set.seed(123)
+
+```
+
+
+## Load long format data frame
+
+```{r}
+#| label: load data
+#| echo: false
+#| warning: false
+#| message: false
+
+
+library(tidyverse)
+library(here)
+
+
+man_standardized_20250227_SCUC_Snapshots_1995_to_2023_LONG <- read_csv(here("data", "man_standardized_20250227_SCUC_Snapshots_1995_to_2023-LONG.csv"))
+
+
+```
+
+
+## Create a correlation-ready wide format (one row per date)
+
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+# Create a correlation-ready wide format (one row per date)
+correlation_ready_wide <- man_standardized_20250227_SCUC_Snapshots_1995_to_2023_LONG %>%
+  # Keep only the essential columns
+  select(date, grouping, value) %>%
+  # Pivot to wide format with just date as identifier
+  pivot_wider(
+    names_from = grouping,
+    values_from = value,
+    values_fn = first  # Use first value if duplicates exist
+  )
+
+```
+
+### Check New Data Frame Before Saving
+
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+
+# 1. Check the structure
+glimpse(correlation_ready_wide)
+dim(correlation_ready_wide)
+
+
+# 2. See column names (your variables)
+names(correlation_ready_wide)
+
+
+# 3. Check how many non-NA values each variable has
+correlation_ready_wide %>%
+  summarise_all(~sum(!is.na(.))) %>%
+  pivot_longer(everything(), names_to = "variable", values_to = "non_na_count") %>%
+  arrange(desc(non_na_count))
+
+
+# 4. Test a few correlations to ensure they work
+# Pick two variables you know should correlate
+test_cor <- cor(
+  correlation_ready_wide$`Average Years of Experience`, 
+  correlation_ready_wide$`SAT-Mean Total Score`, 
+  use = "complete.obs"
+)
+
+print(paste("Test correlation:", round(test_cor, 3)))
+
+
+# 5. Check complete pairs for your test variables
+complete_pairs <- sum(
+  complete.cases(
+    correlation_ready_wide$`Average Years of Experience`,
+    correlation_ready_wide$`SAT-Mean Total Score`
+  )
+)
+
+print(paste("Complete pairs:", complete_pairs))
+
+
+# 6. Create a small correlation matrix to test multiple variables
+test_vars <- correlation_ready_wide %>%
+  select(`Average Years of Experience`, 
+         `SAT-Mean Total Score`, 
+         `Total Students in District`,
+         `Attendance Rate`) %>%
+  cor(use = "complete.obs")
+
+print(test_vars)
+
+
+# 7. Check for any completely empty columns
+empty_cols <- correlation_ready_wide %>%
+  select_if(~all(is.na(.))) %>%
+  names()
+if(length(empty_cols) > 0) {
+  print(paste("Empty columns:", paste(empty_cols, collapse = ", ")))
+} else {
+  print("No completely empty columns found")
+}
+
+
+# 8. Preview the data
+head(correlation_ready_wide)
+
+```
+
+
+
+```{r}
+# # Rename for long-term storage
+# SCUC_Snapshots_1995_to_2023_WIDE_20250717 <- correlation_ready_wide
+# 
+# 
+# # Save it for the dashboard
+# write_csv(SCUC_Snapshots_1995_to_2023_WIDE_20250717, here("data", "SCUC_Snapshots_1995_to_2023_WIDE_20250717.csv"))
+
+```
+
+
+
+
+## Supplemental Code
+
+### Correlation Directly from Long Form Data Frame 
+```{r}
+#| echo: false
+#| warning: false
+#| message: false
+
+
+# # Example 1: Correlate two specific variables
+# correlation_data <- man_standardized_20250227_SCUC_Snapshots_1995_to_2023_LONG %>%
+#   filter(grouping %in% c("Average Years of Experience", "SAT-Mean Total Score")) %>%
+#   select(date, grouping, value) %>%
+#   pivot_wider(names_from = grouping, values_from = value)
+# 
+# # Now correlate
+# cor(correlation_data$'Average Years of Experience', correlation_data$'SAT-Mean Total Score', use = "complete.obs")
+
+```
