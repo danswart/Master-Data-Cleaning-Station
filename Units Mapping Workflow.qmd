@@ -1,0 +1,297 @@
+---
+title: "Units Mapping Workflow"
+format: html
+---
+
+
+### COMPLETE CONVERSION SCRIPT
+
+
+```{r}
+
+# COMPLETE CONVERSION SCRIPT - Full Version
+# Start fresh - only need df_original
+
+library(tidyverse)
+library(here)
+
+# STEP 1: Load and prepare base dataframe
+df_original <- read.csv(here::here("..", "Master Data Bank", "LONG data",
+                                   "man_standardized_20250808_resectioned_decimals_SCUC_Snapshots_1995_to_2023-LONG.csv"))
+
+# Create working copy with unit categories
+df_shiny <- df_original %>%
+  mutate(unit_category = case_when(
+    units %in% c("count", "score") ~ "count_score",
+    units == "dollars" ~ "dollars",
+    units %in% c("rate", "percent_of_exp", "percent_of_prog_exp", 
+                 "percent_of_staff", "percent_of_students", 
+                 "percent_of_teachers", "percent_of_total_funding") ~ "rate_percent",
+    TRUE ~ "other"
+  ))
+
+
+
+
+
+# STEP 2: Define the add_derived_totals function
+add_derived_totals <- function(df) {
+  # Calculate Total Program Expenses for each year
+  program_expenses <- df %>%
+    filter(grouping == "Total Operating Expenditures", units == "dollars") %>%
+    select(date, total_operating_exp = value) %>%
+    left_join(
+      df %>%
+        filter(units == "percent_of_prog_exp") %>%
+        group_by(date) %>%
+        summarise(prog_exp_fraction = sum(value, na.rm = TRUE)),
+      by = "date"
+    ) %>%
+    mutate(
+      value = total_operating_exp * prog_exp_fraction,
+      grouping = "Total Program Expenses",
+      units = "dollars",
+      section = "Derived-Totals",
+      sort = "DER01",
+      unit_category = "dollars",
+      grade = "All",
+      level_achieved = NA
+    ) %>%
+    select(names(df))
+  
+  bind_rows(df, program_expenses)
+}
+
+
+
+
+
+# STEP 3: Define the main conversion function
+convert_to_absolute_values <- function(df, keep_original = TRUE) {
+  
+  # First, add derived totals
+  df <- add_derived_totals(df)
+  
+  # Get base totals for joining
+  base_totals <- df %>%
+    filter(grouping %in% c("Total Expenditures", "Total Revenue", "Total Program Expenses",
+                          "Total Students in District", "Total Teacher FTE", "Total Staff FTE")) %>%
+    select(date, base_variable = grouping, base_value = value) %>%
+    distinct()
+  
+  # Define what gets converted
+  convertible_percentages <- df %>%
+    filter(
+      # Include all percentages
+      units %in% c("percent_of_exp", "percent_of_total_funding", "percent_of_prog_exp",
+                   "percent_of_students", "percent_of_teachers", "percent_of_staff") &
+      # Exclude specific non-convertible items
+      !(section == "Staff-Other" & grouping == "Minority") &
+      !grepl("Percent Tested|Percent At Or Above|Advanced Degrees|Years Experience", grouping)
+    )
+  
+  convertible_rates <- df %>%
+    filter(
+      units == "rate" &
+      ((section == "District_Perform" & grouping %in% c("Annual Dropout Rate", "Attendance Rate")) |
+       (section == "Teachers-Other" & grouping == "Teacher Turnover Rate"))
+    )
+  
+  # Convert percentages
+  converted_percentages <- convertible_percentages %>%
+    mutate(
+      base_variable = case_when(
+        units == "percent_of_exp" ~ "Total Expenditures",
+        units == "percent_of_total_funding" ~ "Total Revenue",
+        units == "percent_of_prog_exp" ~ "Total Program Expenses",
+        units == "percent_of_students" ~ "Total Students in District",
+        units == "percent_of_teachers" ~ "Total Teacher FTE",
+        units == "percent_of_staff" ~ "Total Staff FTE"
+      )
+    ) %>%
+    left_join(base_totals, by = c("date", "base_variable")) %>%
+    mutate(
+      original_value = value,
+      original_units = units,
+      value = value * base_value,
+      units = case_when(
+        original_units %in% c("percent_of_exp", "percent_of_total_funding", "percent_of_prog_exp") ~ "dollars",
+        original_units %in% c("percent_of_students", "percent_of_teachers", "percent_of_staff") ~ "count"
+      ),
+      unit_category = case_when(
+        units == "dollars" ~ "dollars",
+        units == "count" ~ "count_score"
+      ),
+      conversion_note = paste0("Converted from ", original_units, " using ", base_variable)
+    ) %>%
+    select(-base_variable, -base_value)
+  
+  # Convert rates
+  converted_rates <- convertible_rates %>%
+    mutate(
+      base_variable = case_when(
+        grouping %in% c("Annual Dropout Rate", "Attendance Rate") ~ "Total Students in District",
+        grouping == "Teacher Turnover Rate" ~ "Total Teacher FTE"
+      )
+    ) %>%
+    left_join(base_totals, by = c("date", "base_variable")) %>%
+    mutate(
+      original_value = value,
+      original_units = units,
+      value = value * base_value,
+      units = "count",
+      unit_category = "count_score",
+      conversion_note = paste0("Converted from rate using ", base_variable)
+    ) %>%
+    select(-base_variable, -base_value)
+  
+  # Combine everything
+  if (keep_original) {
+    # Mark original convertible items
+    df_marked <- df %>%
+      mutate(
+        is_original = case_when(
+          # Mark convertible percentages
+          units %in% c("percent_of_exp", "percent_of_total_funding", "percent_of_prog_exp",
+                      "percent_of_students", "percent_of_teachers", "percent_of_staff") &
+          !(section == "Staff-Other" & grouping == "Minority") &
+          !grepl("Percent Tested|Percent At Or Above|Advanced Degrees|Years Experience", grouping) ~ TRUE,
+          # Mark convertible rates
+          units == "rate" &
+          ((section == "District_Perform" & grouping %in% c("Annual Dropout Rate", "Attendance Rate")) |
+           (section == "Teachers-Other" & grouping == "Teacher Turnover Rate")) ~ TRUE,
+          # Everything else
+          TRUE ~ FALSE
+        )
+      )
+    
+    # Combine all
+    result <- bind_rows(
+      df_marked,
+      converted_percentages %>% mutate(is_original = FALSE),
+      converted_rates %>% mutate(is_original = FALSE)
+    )
+  } else {
+    # Remove converted items from original
+    df_filtered <- df %>%
+      anti_join(
+        bind_rows(convertible_percentages, convertible_rates),
+        by = c("date", "grouping", "section", "units")
+      )
+    
+    result <- bind_rows(df_filtered, converted_percentages, converted_rates)
+  }
+  
+  return(result)
+}
+
+
+
+
+
+
+
+# STEP 4: Apply conversions
+df_shiny_with_conversions <- convert_to_absolute_values(df_shiny, keep_original = TRUE)
+
+
+
+
+
+# STEP 5: Check what you created
+dim(df_shiny_with_conversions)
+table(df_shiny_with_conversions$unit_category)
+
+
+
+
+
+
+# Look at some converted values
+df_shiny_with_conversions %>%
+  filter(!is.na(conversion_note)) %>%
+  sample_n(min(10, n())) %>%
+  select(date, grouping, value, units, conversion_note) %>%
+  View()
+
+
+```
+
+
+
+
+
+```{r}
+
+# Save the converted data as RDS file
+saveRDS(df_shiny_with_conversions, "data_with_conversions.rds")
+
+```
+
+
+
+```{r}
+
+# Save as CSV too
+write.csv(df_shiny_with_conversions, 
+          "data_with_conversions.csv", 
+          row.names = FALSE)
+
+
+# Check the file size
+file.info("data_with_conversions.csv")$size / 1024^2  # Size in MB
+
+
+```
+
+
+
+For the Next Chat:
+
+1. Save the complete conversion script
+1. Save both data files (CSV and RDS)
+1. Copy the summary
+
+
+In the new chat, provide:
+
+* This summary
+* Your Shiny app code
+* Any specific issues you encounter
+
+
+
+This will give the next conversation everything needed to help you complete the integration!
+
+Save This Summary for the Next Chat:
+
+SHINY APP CONVERSION MODIFICATIONS SUMMARY
+ 
+ WHAT WE DID:
+ 1. Created df_shiny_with_conversions from df_original
+ 2. Added unit_category column (count_score, dollars, rate_percent)
+ 3. Added converted values for percentages/rates to counts/dollars
+ 4. Added columns: is_original, conversion_note, original_value, original_units
+ 5. Created derived "Total Program Expenses" from components
+
+ KEY CONVERSIONS:
+ - percent_of_exp → Total Expenditures (dollars)
+ - percent_of_students → Total Students in District (count)
+ - percent_of_teachers → Total Teacher FTE (count)
+ - percent_of_staff → Total Staff FTE (count)
+ - Annual Dropout Rate → Total Students (count)
+ - Attendance Rate → Total Students (count)
+ - Teacher Turnover Rate → Total Teacher FTE (count)
+
+ SHINY MODIFICATIONS NEEDED:
+ 1. Add toggle: "Show converted values instead of percentages/rates"
+ 2. Add unit-aware filtering to prevent mixing incompatible units
+ 3. Add warnings when user selects mixed units
+ 4. Filter by is_original column based on toggle
+ 5. Add RDS import capability
+ 6. Retain all the existing tabs for creating the data table and the data analysis
+
+
+
+
+

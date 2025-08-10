@@ -1,0 +1,180 @@
+---
+title: "Converting Dataframe Numbers to Decimal"
+subtitle: ""
+description: ""
+author: "Dan Swart, CPA (ret)"
+date: "2025-04-29"
+# bibliography: manual-refs.bib
+format:
+  html:
+    code-copy: true
+    include-after-body: 
+      - text: |
+         <script type="text/javascript" src="reference-backlinks.js"></script>
+    css: 
+      - swart.css
+    page-layout: full
+    fig-width: 12
+    fig-height: 10
+    fig-dpi: 300
+    df-print: paged
+    code-overflow: wrap
+    toc: true
+    citeproc: true
+    link-citations: true
+  typst:
+    fig-width: 12
+    fig-height: 10
+    fig-dpi: 300
+    margin:
+      x: 1in
+      y: 1in
+    toc: true
+    fontsize: 14pt
+    mainfont: "Latin Modern Roman"
+execute:
+  echo: false
+  message: false
+  warning: false
+  eval: true
+  fig-width: 12
+  fig-height: 10
+
+---
+
+
+# Convert percentage values to decimal form in dataframe
+## This script converts values with "percent" units from whole numbers to decimals
+
+
+```{r}
+
+df_decimals_original <- read.csv(
+  here::here("Master Data Bank", "LONG data",
+             "man_standardized_20250807_with_decimals_SCUC_Snapshots_1995_to_2023-LONG.csv"),
+  stringsAsFactors = FALSE)
+
+```
+
+
+
+```{r}
+#| label: convert percent to decimal
+#| eval: false
+
+
+# Load the here package
+library(here)
+
+# Navigate up one level (..) then down to the desired data location and filename
+df_original <- read.csv(
+  here::here("..", "Master Data Bank", "LONG data",
+             "man_standardized_20250227_SCUC_Snapshots_1995_to_2023-LONG.csv"),
+  stringsAsFactors = FALSE
+)
+
+
+# Load Function to convert percentages to decimals
+convert_percentages_to_decimals <- function(df_original) {
+
+  # Create a copy of the dataframe to preserve the original
+  df <- df_original
+
+  # Identify rows where units contain "percent" (case-insensitive)
+  percent_rows <- grepl("percent", df$units, ignore.case = TRUE)
+
+  # Convert percentage values to decimals for those rows
+  # Only convert non-NA and non-empty values
+  if (any(percent_rows)) {
+    # Get indices of rows to convert
+    indices_to_convert <- which(percent_rows)
+
+    # Convert values
+    for (i in indices_to_convert) {
+      # Check if value is not NA and not empty string
+      if (!is.na(df$value[i]) && df$value[i] != "") {
+        # Convert to numeric and divide by 100
+        numeric_val <- as.numeric(df$value[i])
+        if (!is.na(numeric_val)) {
+          df$value[i] <- numeric_val / 100
+        }
+      }
+    }
+  }
+
+  return(df)
+}
+
+
+# Convert the percentages
+df_converted <- convert_percentages_to_decimals(df_original)
+
+
+# Verify the conversion worked
+
+# View summary of converted data
+summary(df_converted[df_converted$units %in% c("rate", "percent_of_exp", "percent_of_prog_exp",
+                                               "percent_of_staff", "percent_of_students",
+                                               "percent_of_teachers", "percent_of_total_funding"), ])
+
+# Example to check specific units
+print("Sample of rate values:")
+
+print(head(df_converted[df_converted$units == "rate", c("value", "units")]))
+
+print("Sample of percent_of_students values:")
+
+print(head(df_converted[df_converted$units == "percent_of_students", c("value", "units")]))
+
+
+#
+# Save the converted dataframe to the same directory as the original
+# write.csv(df_converted,
+#           here::here("..", "Master Data Bank", "LONG data",
+#                      "man_standardized_20250807_with_decimals_SCUC_Snapshots_1995_to_2023-LONG.csv"),
+#           row.names = FALSE)
+#
+
+```
+
+
+
+
+
+
+
+Example usage:
+
+Load your original dataframe (replace with your actual file path)
+library(here)
+Navigate up one level (..) then down to the data location
+df_original <- read.csv(
+ here::here("..", "Master Data Bank", "LONG data",
+            "man_standardized_20250227_SCUC_Snapshots_1995_to_2023-LONG.csv"),
+ stringsAsFactors = FALSE
+)
+Convert the percentages
+df_converted <- convert_percentages_to_decimals(df_original)
+Alternative: If you want to do it inline without a function
+df_converted <- df_original
+df_converted$value[grepl("percent", df_converted$units, ignore.case = TRUE)] <-
+ ifelse(is.na(df_converted$value[grepl("percent", df_converted$units, ignore.case = UE)]) |
+        df_converted$value[grepl("percent", df_converted$units, ignore.case = TRUE)]  "",
+        df_converted$value[grepl("percent", df_converted$units, ignore.case = RUE)],
+        as.numeric(df_converted$value[grepl("percent", df_converted$units, gnore.case  TRUE)]) / 100)
+Verify the conversion worked
+View summary of converted data
+summary(df_converted[df_converted$units %in% c("rate", "percent_of_exp", ercent_of_prog_exp",
+                                               "percent_of_staff", ercent_of_students",
+                                               "percent_of_teachers", ercent_of_total_funding"), ])
+Example to check specific units
+print("Sample of rate values:")
+print(head(df_converted[df_converted$units == "rate", c("value", "units")]))
+print("Sample of percent_of_students values:")
+print(head(df_converted[df_converted$units == "percent_of_students", c("value", units")]))
+
+Save the converted dataframe if needed
+write.csv(df_converted, "converted_data.csv", row.names = FALSE)
+
+
+

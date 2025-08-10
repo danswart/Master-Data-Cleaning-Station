@@ -1,0 +1,499 @@
+---
+title: "Re-Specify Section Column"
+format: html
+---
+
+1. Read the CSV
+
+
+```{r}
+library(dplyr)
+library(readr)
+library(here)
+
+
+# Load data frame from Master Data Bank folder
+
+df_decimals_original <- read.csv(
+  here::here("..", "Master Data Bank", "LONG data",
+             "man_standardized_20250807_with_decimals_SCUC_Snapshots_1995_to_2023-LONG.csv"),
+  stringsAsFactors = FALSE)
+
+
+# df <- read_csv("man_standardized_20250807_with_decimals_SCUC_Snapshots_1995_to_2023-LONG.csv")
+
+```
+
+
+## Surgically change only the rows where:
+
+    section == "Teachers" AND
+
+    grouping is one of: "African American", "American Indian", "Asian", "Hispanic", "Pacific Islander", "Two or More Races", "White"
+
+…so that the section value becomes "Teachers-Ethnic" for those rows.
+
+
+```{r}
+
+library(dplyr)
+library(readr)
+library(here)
+
+# Define the target groupings
+ethnic_groups <- c(
+  "African American",
+  "American Indian",
+  "Asian",
+  "Hispanic",
+  "Pacific Islander",
+  "Two or More Races",
+  "White"
+)
+
+# Read the file
+df_decimals_original <- read.csv(
+  here::here("..", "Master Data Bank", "LONG data",
+             "man_standardized_20250807_with_decimals_SCUC_Snapshots_1995_to_2023-LONG.csv"),
+  stringsAsFactors = FALSE
+)
+
+
+# Update section for matching rows
+df_sections_appended <- df_decimals_original %>%
+  mutate(section = ifelse(
+    section == "Teachers" & grouping %in% ethnic_groups,
+    paste0(section, "-Ethnic"),
+    section
+  ))
+
+```
+
+
+
+
+## Take the updated df_section_appended object and apply the same “surgical” logic, but this time for "Teachers-Type" instead of "Teachers-Ethnic".
+
+```{r}
+
+library(dplyr)
+library(readr)
+library(here)
+
+# Define the target groupings
+type_groups <- c(
+  "Regular Education",
+  "Special Education",
+  "Compensatory Education",
+  "Bilingual-ESL Education",
+  "Career and Technology Education",
+  "Other Education-Includes G and T"
+)
+
+# Update section for matching rows
+df_sections_appended <- df_sections_appended %>%
+  mutate(section = ifelse(
+    section == "Teachers" & grouping %in% type_groups,
+    paste0(section, "-Type"),
+    section
+  ))
+
+```
+
+
+## Quick verification:
+
+
+```{r}
+
+df_sections_appended %>%
+  filter(grepl("Teachers", section)) %>%
+  distinct(section, grouping) %>%
+  arrange(section, grouping)
+
+```
+
+
+## Take the updated df_sections_appended object and apply the same “surgical” logic, but this time for "Teachers-Other" instead of "Teachers-Ethnic".
+
+```{r}
+
+library(dplyr)
+library(readr)
+library(here)
+
+# Define the target groupings
+type_groups <- c(
+  "With 5 or Fewer Years Experience",
+  "Average Years of Experience",
+  "With Advanced Degrees",
+  "Teacher Turnover Rate"
+)
+
+# Update section for matching rows
+df_sections_appended <- df_sections_appended %>%
+  mutate(section = ifelse(
+    section == "Teachers" & grouping %in% type_groups,
+    paste0(section, "-Other"),
+    section
+  ))
+
+```
+
+## Quick verification:
+
+* This should now show Teachers with the correct groupings in each category.
+
+
+```{r}
+
+df_sections_appended %>%
+  filter(grepl("Teachers", section)) %>%
+  distinct(section, grouping) %>%
+  arrange(section, grouping)
+
+```
+
+----
+
+
+
+## Take the updated df_sections_appended object and apply the same “surgical” logic, but this time for properly labeling the "Students-Ethnic" in the section column.
+
+
+```{r}
+
+library(dplyr)
+
+# Define the ethnic groupings
+ethnic_groups <- c(
+  "African American",
+  "American Indian",
+  "Asian",
+  "Hispanic",
+  "Pacific Islander",
+  "2 or More Races",
+  "White"
+)
+
+# Update section for matching rows
+df_sections_appended <- df_sections_appended %>%
+  mutate(section = ifelse(
+    section == "Students" & grouping %in% ethnic_groups,
+    paste0(section, "-Ethnic"),
+    section
+  ))
+
+```
+
+
+## Quick verification:
+
+* This should now show Students with the correct groupings in each category.
+
+
+```{r}
+
+df_sections_appended %>%
+  filter(grepl("Students", section)) %>%
+  distinct(section, grouping) %>%
+  arrange(section, grouping)
+
+```
+
+
+
+
+## Take the updated df_sections_appended object and apply the same “surgical” logic, but this time for properly labeling the "Staff-Type" in the section column.
+
+
+```{r}
+
+library(dplyr)
+
+# Define the staff groupings
+specified_groups <- c(
+  "Central Administrative",
+  "School Administrative",
+  "Professional Support Staff",
+  "Teachers",
+  "Educational Aides",
+  "Auxiliary Staff"
+)
+
+# Update section for matching rows
+df_sections_appended <- df_sections_appended %>%
+  mutate(section = ifelse(
+    section == "Staff" & grouping %in% specified_groups,
+    paste0(section, "-Type"),
+    section
+  ))
+
+```
+
+
+## Quick verification:
+
+* This should now show Students with the correct groupings in each category.
+
+
+```{r}
+
+df_sections_appended %>%
+  filter(grepl("Staff", section)) %>%
+  distinct(section, grouping) %>%
+  arrange(section, grouping)
+
+```
+
+
+
+
+## Take the updated df_sections_appended object and apply the same “surgical” logic, but this time for properly labeling the "Staff-Avgs" in the section column.
+
+
+```{r}
+
+library(dplyr)
+
+# Define the staff groupings
+specified_groups <- c(
+  "Average Central Administr Salary",
+  "Average Profess Support Staff Salary",
+  "Average School Administr Salary",
+  "Average Teacher Salary"
+)
+
+# Update section for matching rows
+df_sections_appended <- df_sections_appended %>%
+  mutate(section = ifelse(
+    section == "Staff" & grouping %in% specified_groups,
+    paste0(section, "-Avgs"),
+    section
+  ))
+
+```
+
+
+## Quick verification:
+
+* This should now show Students with the correct groupings in each category.
+
+
+```{r}
+
+df_sections_appended %>%
+  filter(grepl("Staff", section)) %>%
+  distinct(section, grouping) %>%
+  arrange(section, grouping)
+
+```
+
+
+
+## Take the updated df_sections_appended object and apply the same “surgical” logic, but this time for properly labeling the "Staff-Other" in the section column.
+
+
+```{r}
+
+library(dplyr)
+
+# Define the staff groupings
+specified_groups <- c(
+  "Minority",
+  "Number of Students Per Teacher",
+  "Number of Students Per Total Staff",
+  "Total Staff FTE",
+  "Total Teacher FTE"
+)
+
+# Update section for matching rows
+df_sections_appended <- df_sections_appended %>%
+  mutate(section = ifelse(
+    section == "Staff" & grouping %in% specified_groups,
+    paste0(section, "-Other"),
+    section
+  ))
+
+```
+
+
+## Quick verification:
+
+* This should now show Students with the correct groupings in each category.
+
+
+```{r}
+
+df_sections_appended %>%
+  filter(grepl("Staff", section)) %>%
+  distinct(section, grouping) %>%
+  arrange(section, grouping)
+
+```
+
+----
+
+
+
+## Take the updated df_sections_appended object and apply the same “surgical” logic, but this time for properly labeling the "Expenses-Function" in the section column.
+
+
+```{r}
+
+library(dplyr)
+
+# Define the staff groupings
+specified_groups <- c(
+  "Instructional",
+  "Central Administrative",
+  "Campus Administrative-School Leadership",
+  "Plant Services",
+  "Other Operating",
+  "Non-Operating"
+)
+
+# Update section for matching rows
+df_sections_appended <- df_sections_appended %>%
+  mutate(section = ifelse(
+    section == "Expenses" & grouping %in% specified_groups,
+    paste0(section, "-Function"),
+    section
+  ))
+
+```
+
+
+## Quick verification:
+
+* This should now show Students with the correct groupings in each category.
+
+
+```{r}
+
+df_sections_appended %>%
+  filter(grepl("Expenses", section)) %>%
+  distinct(section, grouping) %>%
+  arrange(section, grouping)
+
+```
+
+
+
+
+## Take the updated df_sections_appended object and apply the same “surgical” logic, but this time for properly labeling the "Expenses-Program" in the section column.
+
+
+```{r}
+
+library(dplyr)
+
+# Define the staff groupings
+specified_groups <- c(
+  "Regular Education",
+  "Un-Allocated Expenditures",
+  "Special Education",
+  "Compensatory-Accelerated Education",
+  "Bilingual-ESL Education",
+  "Career and Technology Education",
+  "Gifted and Talented Education",
+  "Athletics-Related Activities",
+  "High School Allotment",
+  "Prekindergarten"
+)
+
+# Update section for matching rows
+df_sections_appended <- df_sections_appended %>%
+  mutate(section = ifelse(
+    section == "Expenses" & grouping %in% specified_groups,
+    paste0(section, "-Program"),
+    section
+  ))
+
+```
+
+
+## Quick verification:
+
+* This should now show Students with the correct groupings in each category.
+
+
+```{r}
+
+df_sections_appended %>%
+  filter(grepl("Expenses", section)) %>%
+  distinct(section, grouping) %>%
+  arrange(section, grouping)
+
+```
+
+
+
+
+
+## Take the updated df_sections_appended object and apply the same “surgical” logic, but this time for properly labeling the "Expenses-Totals" in the section column.
+
+
+```{r}
+
+library(dplyr)
+
+# Define the staff groupings
+specified_groups <- c(
+  "Total Expenditures",
+  "Total Instructional ExpendPer Pupil",
+  "Total Instructional Expenditures",
+  "Total Operating Expend Per Pupil",
+  "Total Operating Expenditures"
+)
+
+# Update section for matching rows
+df_sections_appended <- df_sections_appended %>%
+  mutate(section = ifelse(
+    section == "Expenses" & grouping %in% specified_groups,
+    paste0(section, "-Totals"),
+    section
+  ))
+
+```
+
+
+## Quick verification:
+
+```{r}
+
+df_sections_appended %>%
+  filter(grepl("Expenses", section)) %>%
+  distinct(section, grouping) %>%
+  arrange(section, grouping)
+
+```
+
+----
+
+
+
+```{r}
+
+df_sections_appended %>%
+  filter(grepl("Students", section)) %>%
+  distinct(section, grouping) %>%
+  arrange(section, grouping)
+
+```
+
+
+## Save the work
+
+```{r}
+
+write.csv(
+  df_sections_appended,
+  here::here("..", "Master Data Bank", "LONG data",
+             "man_standardized_20250808_resectioned_decimals_SCUC_Snapshots_1995_to_2023-LONG.csv"),
+  row.names = FALSE
+)
+
+```
+
+
