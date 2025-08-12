@@ -1,3 +1,6 @@
+// Current as of: 2025-08-11
+
+
 function createReferenceBacklinks() {
   // Select all references in the bibliography except the citation for the post itself
   const references = document.querySelectorAll(

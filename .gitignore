@@ -1,3 +1,5 @@
+# Current as of: 2025-08-11
+
 
 # Bookdown files-if book rendered in cloud uncomment these
 /*.pdf
@@ -100,8 +102,24 @@ Thumbs.db
 _freeze/
 
 
+
 # Rendered output (be selective)
+
 *.html
-!vignettes/*.html  # Exception - keep vignette HTML
-.Rproj.user
-.quarto
+!header.html
+!vignettes/*.html
+!giscus.html
+
+
+
+
+# ------------------------
+# Large data files (naming convention: large_*)
+# These are typically big temporary or downloaded datasets that should not be versioned
+large_*.rds
+large_*.RDS
+large_*.csv
+large_*.xlsx
+
+
+

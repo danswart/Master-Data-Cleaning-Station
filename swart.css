@@ -1,7 +1,15 @@
-/* AS OF 2025-06-29 /*
+/* Current as of: 2025-08-11 */
+
+
+
+/*-- scss:defaults --*/
+
+/*  // Sass Variables
+/*  // https://quarto.org/docs/output-formats/html-themes.html#sass-variables
+
 
 /* Edit the CSS properties in this file to create a custom
-   theme. Only edit values in the right column
+   Distill theme. Only edit values in the right column
    for each row; values shown are the CSS defaults.
    To return any property to the default,
    you may set its value to: unset
@@ -9,25 +17,49 @@
 
 /* Optional: embed custom fonts here with `@import`          */
 /* This must remain at the top of this file.                 */
+
+/* Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Lato');
 @import url('https://fonts.googleapis.com/css2?family=Fira+Mono');
 @import url('https://fonts.googleapis.com/css2?family=Montserrat');
 @import url('https://fonts.googleapis.com/css2?family=Cabin');         /* swart */
 @import url('https://fonts.googleapis.com/css2?family=Roboto+Slab');   /* swart */
 @import url('https://fonts.googleapis.com/css2?family=Schoolbell');    /* swart */
-@import url('https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,200..900;1,200..900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
 
 
 
-hr {
-  border: none;
-  height: 4px;
-  background-color: #333;
-  margin: 2em 0;
+.table {
+  width: 100%;
+  max-width: 100%;
+  margin-bottom: 1rem;
+}
+
+.dataTables_wrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.responsive-plot {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+figure {
+  width: 100%;
+  max-width: 100%;
+}
+
+
+.callout-tip, .callout-caution, .callout-important, .callout-warning {
+  display: block;
+  padding: 1em;
+  margin: 1em 0;
+  border-style: solid;
+  border-width: 4px;
+  border-radius: 10px;
+/*  background-color: #f8f9fa;  background colors set below for each callout */
 }
 
 
@@ -85,26 +117,32 @@ hr {
 body {
   font-size: 18px;
   max-width: 100%;      /* Adjust the width as needed */
-  font-family: "Playfair+Display", sans-serif;
+  font-family: "Cabin", sans-serif;
   color: black;
+}
+
+/* Alternative selector that's more specific */
+title {
+    color: #2c3e50;
+    font-weight: bold;
 }
 
 
 h1 {
-  font-family: "Playfair+Display", sans-serif;
+  font-family: "Cabin", sans-serif;
   padding: 10px;
   color: darkgreen;
 }
 
 h2 {
-  font-family: "Playfair+Display", sans-serif;
+  font-family: "Cabin", sans-serif;
   font-size: 24px;
-  color: navy;
+  color: darkred;
 }
 
 
 h3 {
-  font-family: "Playfair+Display", sans-serif;
+  font-family: "Cabin", sans-serif;
   font-size: 22px;
   color: darkred;
   text-align: left;
@@ -112,14 +150,14 @@ h3 {
 
 
 h4 {
-  font-family: "Playfair+Display", sans-serif;
+  font-family: "Cabin", sans-serif;
   font-size: 20px;
-  color: darkred;
+  color: blue;
 }
 
 
 h5 {
-  font-family: "Playfair+Display", sans-serif;
+  font-family: "Cabin", sans-serif;
   font-size: 20px;
   color: black;
 }
@@ -203,9 +241,7 @@ h5 {
     text-align: left;
     border-radius: 10px;
     width: 100%;
-    padding-top: 10px;
     padding-bottom: 10px;
-    padding-left: 10px;
 }
 
 .quote-author {
